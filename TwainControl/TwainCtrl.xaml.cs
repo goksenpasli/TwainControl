@@ -7,7 +7,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using TwainWpf;
@@ -15,18 +14,20 @@ using TwainWpf.Wpf;
 
 namespace TwainControl
 {
-    /// <summary>
-    /// Interaction logic for UserControl1.xaml
-    /// </summary>
+
     public partial class TwainCtrl : UserControl, INotifyPropertyChanged, IDisposable
     {
-        public static readonly RoutedCommand ScanImage = new RoutedCommand();
+        public ICommand ScanImage { get; }
+
+        public ICommand Aktar { get; }
+
+        public ICommand Kaydet { get; }
 
         private ScanSettings _settings;
 
         private bool arayüzetkin = true;
 
-        private ObservableCollection<BitmapFrame> resimler;
+        private ObservableCollection<BitmapFrame> resimler = new ObservableCollection<BitmapFrame>();
 
         private string seçiliTarayıcı;
 
@@ -38,6 +39,63 @@ namespace TwainControl
         {
             InitializeComponent();
             DataContext = this;
+
+            ScanImage = new RelayCommand(parameter =>
+            {
+                ArayüzEtkin = false;
+                _settings = new ScanSettings
+                {
+                    UseDocumentFeeder = UseAdfCheckBox.IsChecked,
+                    ShowTwainUi = UseUiCheckBox.IsChecked ?? false,
+                    ShowProgressIndicatorUi = ShowProgressCheckBox.IsChecked,
+                    UseDuplex = UseDuplexCheckBox.IsChecked,
+                    ShouldTransferAllPages = true,
+                    Resolution = new ResolutionSettings { ColourSetting = BlackAndWhiteCheckBox.IsChecked ?? false ? ColourSetting.BlackAndWhite : ColourSetting.Colour, Dpi = (int?)IntInpResolution.Value },
+                    Rotation = new RotationSettings { AutomaticDeskew = UseDeskew.IsChecked ?? false, AutomaticRotate = AutoRotateCheckBox.IsChecked ?? false, AutomaticBorderDetection = AutoDetectBorderCheckBox.IsChecked ?? false }
+                };
+                if (Tarayıcılar.Count > 0)
+                {
+                    twain.SelectSource(SeçiliTarayıcı);
+                    twain.StartScanning(_settings);
+                }
+            }, parameter => !Environment.Is64BitProcess);
+
+            Aktar = new RelayCommand(parameter => SeçiliResim = parameter as BitmapFrame, parameter => true);
+
+            Kaydet = new RelayCommand(parameter =>
+            {
+                if (parameter is BitmapFrame resim)
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog { Filter = "Tif Resmi (*.tif)|*.tif|Jpg Resmi(*.jpg)|*.jpg" };
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        switch (saveFileDialog.FilterIndex)
+                        {
+                            case 1:
+                                switch (BlackAndWhiteCheckBox.IsChecked)
+                                {
+                                    case true:
+                                        {
+                                            File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.Tiff));
+                                            break;
+                                        }
+                                    case null:
+                                    case false:
+                                        {
+                                            File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.TiffRenkli));
+                                            break;
+                                        }
+                                }
+                                break;
+                            case 2:
+                                File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.Jpg));
+                                break;
+                        }
+                    }
+                }
+
+            }, parameter => true);
+
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -64,6 +122,20 @@ namespace TwainControl
                 {
                     resimler = value;
                     OnPropertyChanged(nameof(Resimler));
+                }
+            }
+        }
+
+        public BitmapFrame SeçiliResim
+        {
+            get => seçiliResim;
+
+            set
+            {
+                if (seçiliResim != value)
+                {
+                    seçiliResim = value;
+                    OnPropertyChanged(nameof(SeçiliResim));
                 }
             }
         }
@@ -96,64 +168,11 @@ namespace TwainControl
 
         protected virtual void OnPropertyChanged(string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private void HyperlinkSave_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as Hyperlink)?.DataContext is BitmapFrame resim)
-            {
-                SaveFileDialog saveFileDialog = new SaveFileDialog { Filter = "Tif Resmi (*.tif)|*.tif|Jpg Resmi(*.jpg)|*.jpg" };
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    switch (saveFileDialog.FilterIndex)
-                    {
-                        case 1:
-                            switch (BlackAndWhiteCheckBox.IsChecked)
-                            {
-                                case true:
-                                    {
-                                        File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.Tiff));
-                                        break;
-                                    }
-                                case null:
-                                case false:
-                                    {
-                                        File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.TiffRenkli));
-                                        break;
-                                    }
-                            }
-                            break;
-                        case 2:
-                            File.WriteAllBytes(saveFileDialog.FileName, resim.ToTiffJpegByteArray(Picture.Format.Jpg));
-                            break;
-                    }
-                }
-            }
-        }
-
-        private void ScanButton_CanExecute(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = !Environment.Is64BitProcess;
-
-        private void ScanButton_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            ArayüzEtkin = false;
-            _settings = new ScanSettings
-            {
-                UseDocumentFeeder = UseAdfCheckBox.IsChecked,
-                ShowTwainUi = UseUiCheckBox.IsChecked ?? false,
-                ShowProgressIndicatorUi = ShowProgressCheckBox.IsChecked,
-                UseDuplex = UseDuplexCheckBox.IsChecked,
-                ShouldTransferAllPages = true,
-                Resolution = new ResolutionSettings { ColourSetting = BlackAndWhiteCheckBox.IsChecked ?? false ? ColourSetting.BlackAndWhite : ColourSetting.Colour, Dpi = (int?)IntInpResolution.Value },
-                Rotation = new RotationSettings { AutomaticDeskew = UseDeskew.IsChecked ?? false, AutomaticRotate = AutoRotateCheckBox.IsChecked ?? false, AutomaticBorderDetection = AutoDetectBorderCheckBox.IsChecked ?? false }
-            };
-            if (Tarayıcılar.Count > 0)
-            {
-                twain.SelectSource(SeçiliTarayıcı);
-                twain.StartScanning(_settings);
-            }
-        }
-
         #region IDisposable Support
 
         private bool disposedValue;
+
+        private BitmapFrame seçiliResim;
 
         public void Dispose() => Dispose(true);
 
@@ -184,7 +203,6 @@ namespace TwainControl
                     SeçiliTarayıcı = twain.SourceNames[0];
                 }
 
-                Resimler = new ObservableCollection<BitmapFrame>();
                 twain.TransferImage += (s, args) =>
                 {
                     if (args.Image != null)

@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="TwainControl.TwainCtrl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="clr-namespace:TwainControl"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="500" d:DesignWidth="800" Loaded="UserControl_Loaded" UseLayoutRounding="True"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <local:NullableToBooleanConverter x:Key="NullableToBooleanConverter" />
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <GroupBox Header="KAYNAK SEÇ" Grid.Column="0">
+            <Grid IsEnabled="{Binding SeçiliTarayıcı, Converter={StaticResource NullableToBooleanConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ComboBox Grid.Row="0" ItemsSource="{Binding Tarayıcılar}" SelectedItem="{Binding SeçiliTarayıcı, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Mode=OneWay}" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <GroupBox Header="AYARLAR" Grid.Row="1" IsEnabled="{Binding ArayüzEtkin}">
+                    <UniformGrid Columns="1">
+                        <Slider x:Name="IntInpResolution"
+                            AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="600" Minimum="72"
+                            SmallChange="1" Ticks="72,96,120,150,200,300,450,600" ToolTip="ÇÖZÜNÜRLÜK" />
+                        <Slider x:Name="IntInpThreshold"
+                            AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="255" Minimum="1"
+                            SmallChange="1" ToolTip="SİYAH BEYAZ EŞİK DEĞERİ"
+                            Value="160" />
+                        <CheckBox Name="UseAdfCheckBox" Content="BESLEYİCİ" />
+                        <CheckBox x:Name="BlackAndWhiteCheckBox"
+                            Content="SİYAH BEYAZ TARA"
+                            IsThreeState="True"
+                            ToolTip="İşaretli: Siyah Beyaz(En Az Boyut)&#xA;İşaretsiz: Renkli(En Çok Boyut)&#xA;Yarısı İşaretli: Gri(Orta Boyut)" />
+                        <CheckBox Name="UseDuplexCheckBox" Content="İKİ YÖNLÜ TARAMA" />
+                        <CheckBox Name="UseDeskew" Content="EĞRİLİK DÜZELT" />
+                        <CheckBox Name="UseUiCheckBox" Content="ARAYÜZ GÖSTER" />
+                        <CheckBox Name="AutoDetectBorderCheckBox" Content="OTOMATİK KENAR TESPİTİ" />
+                        <CheckBox Name="ShowProgressCheckBox" Content="YÜZDE GÖSTER" />
+                        <CheckBox Name="AutoRotateCheckBox" Content="OTOMATİK DÖNDÜR" />
+                        <CheckBox Name="SeperateSaveCheckBox" Content="HER SAYFAYI AYRI TARA" ToolTip="Her Sayfayı Ayrı Dosyaya Kaydet Dosyalar Resimlerim Klasörüne Kaydedilir." />
+                        <Button Content="TARA" Command="{x:Static local:TwainCtrl.ScanImage}">
+                            <Button.CommandBindings>
+                                <CommandBinding CanExecute="ScanButton_CanExecute" Command="{x:Static local:TwainCtrl.ScanImage}" Executed="ScanButton_Executed" />
+                            </Button.CommandBindings>
+                        </Button>
+                    </UniformGrid>
+                </GroupBox>
+                <ListBox x:Name="LbResimler"
+                    Grid.Row="2"
+                    ItemsSource="{Binding Resimler, Mode=OneWay}"
+                    SelectionMode="Extended">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type BitmapFrame}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock ToolTip="KAYDET">
+                                        <Hyperlink Click="HyperlinkSave_Click">
+                                            <Run Text="KAYDET" />
+                                        </Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Image Width="42" Height="59" Source="{Binding Thumbnail, Mode=OneWay}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <!--<i:Interaction.Triggers>
+                            <ei:DataTrigger Binding="{Binding Items.Count, ElementName=LbResimler, Mode=OneWay}" Comparison="GreaterThan" Value="0">
+                                <ei:ChangePropertyAction PropertyName="Visibility" />
+                            </ei:DataTrigger>
+                            <ei:DataTrigger Binding="{Binding Items.Count, ElementName=LbResimler, Mode=OneWay}" Value="0">
+                                <ei:ChangePropertyAction PropertyName="Visibility" Value="Collapsed" />
+                            </ei:DataTrigger>
+                        </i:Interaction.Triggers>
+                        <i:Interaction.Behaviors>
+                            <local:ListBoxMultipleSelectionBehavior SelectedItems="{Binding SeçiliResimler, ElementName=Window}" />
+                        </i:Interaction.Behaviors>-->
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="BorderBrush" Value="MediumSeaGreen" />
+                            <Setter Property="BorderThickness" Value="2" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="EVRAK" Grid.Column="1" Margin="1,0,0,0">
+            <Image Grid.Column="1" Source="{Binding ElementName=LbResimler, Path=SelectedItem}" />
+        </GroupBox>
+    </Grid>
+</UserControl>

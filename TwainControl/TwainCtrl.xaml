@@ -5,17 +5,13 @@
     d:DataContext="{d:DesignInstance Type=local:TwainCtrl}"
     d:DesignHeight="420" d:DesignWidth="600" Loaded="UserControl_Loaded" UseLayoutRounding="True"
     mc:Ignorable="d">
-    <UserControl.Resources>
-        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <local:NullableToBooleanConverter x:Key="NullableToBooleanConverter" />
-    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="230" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <GroupBox Header="KAYNAK SEÇ" Grid.Column="0">
-            <Grid IsEnabled="{Binding SeçiliTarayıcı, Converter={StaticResource NullableToBooleanConverter}}">
+            <Grid IsEnabled="{Binding ArayüzEtkin}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -28,27 +24,26 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <GroupBox Header="AYARLAR" Grid.Row="1" IsEnabled="{Binding ArayüzEtkin}">
+                <GroupBox Header="AYARLAR" Grid.Row="1">
                     <UniformGrid Columns="1">
-                        <Slider x:Name="IntInpResolution"
-                            AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="600" Minimum="72"
-                            SmallChange="1" Ticks="72,96,120,150,200,300,450,600" ToolTip="ÇÖZÜNÜRLÜK" />
-                        <Slider x:Name="IntInpThreshold"
-                            AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="255" Minimum="1"
+                        <Slider AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="600" Minimum="72"
+                            SmallChange="1" Ticks="72,96,120,150,200,300,450,600" ToolTip="ÇÖZÜNÜRLÜK"
+                            Value="{Binding Çözünürlük, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Slider AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True" Maximum="255" Minimum="1"
                             SmallChange="1" ToolTip="SİYAH BEYAZ EŞİK DEĞERİ"
-                            Value="160" />
-                        <CheckBox Name="UseAdfCheckBox" Content="BESLEYİCİ" />
-                        <CheckBox x:Name="BlackAndWhiteCheckBox"
-                            Content="SİYAH BEYAZ TARA"
+                            Value="{Binding Eşik, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <CheckBox Content="BESLEYİCİ" IsChecked="{Binding Adf}" />
+                        <CheckBox Content="SİYAH BEYAZ TARA"
+                            IsChecked="{Binding Bw}"
                             IsThreeState="True"
                             ToolTip="İşaretli: Siyah Beyaz(En Az Boyut)&#xA;İşaretsiz: Renkli(En Çok Boyut)&#xA;Yarısı İşaretli: Gri(Orta Boyut)" />
-                        <CheckBox Name="UseDuplexCheckBox" Content="İKİ YÖNLÜ TARAMA" />
-                        <CheckBox Name="UseDeskew" Content="EĞRİLİK DÜZELT" />
-                        <CheckBox Name="UseUiCheckBox" Content="ARAYÜZ GÖSTER" />
-                        <CheckBox Name="AutoDetectBorderCheckBox" Content="OTOMATİK KENAR TESPİTİ" />
-                        <CheckBox Name="ShowProgressCheckBox" Content="YÜZDE GÖSTER" />
-                        <CheckBox Name="AutoRotateCheckBox" Content="OTOMATİK DÖNDÜR" />
-                        <CheckBox Name="SeperateSaveCheckBox" Content="HER SAYFAYI AYRI TARA" ToolTip="Her Sayfayı Ayrı Dosyaya Kaydet Dosyalar Resimlerim Klasörüne Kaydedilir." />
+                        <CheckBox Content="İKİ YÖNLÜ TARAMA" IsChecked="{Binding Duplex}" />
+                        <CheckBox Content="EĞRİLİK DÜZELT" IsChecked="{Binding Deskew}" />
+                        <CheckBox Content="ARAYÜZ GÖSTER" IsChecked="{Binding ShowUi}" />
+                        <CheckBox Content="OTOMATİK KENAR TESPİTİ" IsChecked="{Binding BorderDetect}" />
+                        <CheckBox Content="YÜZDE GÖSTER" IsChecked="{Binding ShowProgress}" />
+                        <CheckBox Content="OTOMATİK DÖNDÜR" IsChecked="{Binding AutoRotate}" />
+                        <CheckBox Content="HER SAYFAYI AYRI TARA" IsChecked="{Binding SeperateSave}" ToolTip="Her Sayfayı Ayrı Dosyaya Kaydet Dosyalar Resimlerim Klasörüne Kaydedilir." />
                         <Button Content="TARA" Command="{Binding ScanImage}" />
                     </UniformGrid>
                 </GroupBox>
@@ -64,6 +59,10 @@
                                         <Hyperlink Command="{Binding ElementName=UserControl, Path=DataContext.Kaydet}" CommandParameter="{Binding Mode=OneWay}">
                                             <Run Text="KAYDET" />
                                         </Hyperlink>
+                                        <Hyperlink FontFamily="Segoe UI Black" Command="{Binding ElementName=UserControl, Path=DataContext.ResimSil}" CommandParameter="{Binding Mode=OneWay}">
+                                            <Run Text="X" />
+                                        </Hyperlink>
+                                        <LineBreak />
                                         <Hyperlink Command="{Binding ElementName=UserControl, Path=DataContext.Aktar}" CommandParameter="{Binding Mode=OneWay}">
                                             <Run Text="AKTAR" />
                                         </Hyperlink>

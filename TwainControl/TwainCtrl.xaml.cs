@@ -17,19 +17,37 @@ namespace TwainControl
 
     public partial class TwainCtrl : UserControl, INotifyPropertyChanged, IDisposable
     {
-        public ICommand ScanImage { get; }
-
-        public ICommand Aktar { get; }
-
-        public ICommand Kaydet { get; }
-
         private ScanSettings _settings;
+
+        private bool adf;
 
         private bool arayüzetkin = true;
 
+        private bool autoRotate;
+
+        private bool borderDetect;
+
+        private bool? bw = false;
+
+        private double çözünürlük = 72d;
+
+        private bool deskew;
+
+        private bool duplex;
+
+        private double eşik = 160d;
+
         private ObservableCollection<BitmapFrame> resimler = new ObservableCollection<BitmapFrame>();
 
+        private BitmapFrame seçiliResim;
+
         private string seçiliTarayıcı;
+
+        private bool seperateSave;
+
+        private bool showProgress;
+
+        private bool showUi;
 
         private IList<string> tarayıcılar;
 
@@ -40,18 +58,18 @@ namespace TwainControl
             InitializeComponent();
             DataContext = this;
 
-            ScanImage = new RelayCommand(parameter =>
+            ScanImage = new RelayCommand<object>(parameter =>
             {
                 ArayüzEtkin = false;
                 _settings = new ScanSettings
                 {
-                    UseDocumentFeeder = UseAdfCheckBox.IsChecked,
-                    ShowTwainUi = UseUiCheckBox.IsChecked ?? false,
-                    ShowProgressIndicatorUi = ShowProgressCheckBox.IsChecked,
-                    UseDuplex = UseDuplexCheckBox.IsChecked,
+                    UseDocumentFeeder = Adf,
+                    ShowTwainUi = ShowUi,
+                    ShowProgressIndicatorUi = ShowProgress,
+                    UseDuplex = Duplex,
                     ShouldTransferAllPages = true,
-                    Resolution = new ResolutionSettings { ColourSetting = BlackAndWhiteCheckBox.IsChecked ?? false ? ColourSetting.BlackAndWhite : ColourSetting.Colour, Dpi = (int?)IntInpResolution.Value },
-                    Rotation = new RotationSettings { AutomaticDeskew = UseDeskew.IsChecked ?? false, AutomaticRotate = AutoRotateCheckBox.IsChecked ?? false, AutomaticBorderDetection = AutoDetectBorderCheckBox.IsChecked ?? false }
+                    Resolution = new ResolutionSettings { ColourSetting = Bw ?? false ? ColourSetting.BlackAndWhite : ColourSetting.Colour, Dpi = (int)Çözünürlük },
+                    Rotation = new RotationSettings { AutomaticDeskew = Deskew, AutomaticRotate = AutoRotate, AutomaticBorderDetection = BorderDetect }
                 };
                 if (Tarayıcılar.Count > 0)
                 {
@@ -60,9 +78,15 @@ namespace TwainControl
                 }
             }, parameter => !Environment.Is64BitProcess);
 
-            Aktar = new RelayCommand(parameter => SeçiliResim = parameter as BitmapFrame, parameter => true);
+            Aktar = new RelayCommand<object>(parameter =>
+            {
+                SeçiliResim = parameter as BitmapFrame;
+                OnPropertyChanged(nameof(SeçiliResim));
+            }, parameter => true);
 
-            Kaydet = new RelayCommand(parameter =>
+            ResimSil = new RelayCommand<object>(parameter => Resimler?.Remove(parameter as BitmapFrame), parameter => true);
+
+            Kaydet = new RelayCommand<object>(parameter =>
             {
                 if (parameter is BitmapFrame resim)
                 {
@@ -72,7 +96,7 @@ namespace TwainControl
                         switch (saveFileDialog.FilterIndex)
                         {
                             case 1:
-                                switch (BlackAndWhiteCheckBox.IsChecked)
+                                switch (Bw)
                                 {
                                     case true:
                                         {
@@ -100,6 +124,21 @@ namespace TwainControl
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        public bool Adf
+        {
+            get { return adf; }
+            set
+            {
+                if (adf != value)
+                {
+                    adf = value;
+                    OnPropertyChanged(nameof(Adf));
+                }
+            }
+        }
+
+        public ICommand Aktar { get; }
+
         public bool ArayüzEtkin
         {
             get => arayüzetkin;
@@ -113,6 +152,99 @@ namespace TwainControl
             }
         }
 
+        public bool AutoRotate
+        {
+            get { return autoRotate; }
+            set
+            {
+                if (autoRotate != value)
+                {
+                    autoRotate = value;
+                    OnPropertyChanged(nameof(AutoRotate));
+                }
+            }
+        }
+
+        public bool BorderDetect
+        {
+            get { return borderDetect; }
+            set
+            {
+                if (borderDetect != value)
+                {
+                    borderDetect = value;
+                    OnPropertyChanged(nameof(BorderDetect));
+                }
+            }
+        }
+
+        public bool? Bw
+        {
+            get { return bw; }
+            set
+            {
+                if (bw != value)
+                {
+                    bw = value;
+                    OnPropertyChanged(nameof(Bw));
+                }
+            }
+        }
+
+        public double Çözünürlük
+        {
+            get { return çözünürlük; }
+            set
+            {
+                if (çözünürlük != value)
+                {
+                    çözünürlük = value;
+                    OnPropertyChanged(nameof(Çözünürlük));
+                }
+            }
+        }
+
+        public bool Deskew
+        {
+            get { return deskew; }
+            set
+            {
+                if (deskew != value)
+                {
+                    deskew = value;
+                    OnPropertyChanged(nameof(Deskew));
+                }
+            }
+        }
+
+        public bool Duplex
+        {
+            get { return duplex; }
+            set
+            {
+                if (duplex != value)
+                {
+                    duplex = value;
+                    OnPropertyChanged(nameof(Duplex));
+                }
+            }
+        }
+
+        public double Eşik
+        {
+            get { return eşik; }
+            set
+            {
+                if (eşik != value)
+                {
+                    eşik = value;
+                    OnPropertyChanged(nameof(Eşik));
+                }
+            }
+        }
+
+        public ICommand Kaydet { get; }
+
         public ObservableCollection<BitmapFrame> Resimler
         {
             get => resimler;
@@ -125,6 +257,10 @@ namespace TwainControl
                 }
             }
         }
+
+        public ICommand ResimSil { get; }
+
+        public ICommand ScanImage { get; }
 
         public BitmapFrame SeçiliResim
         {
@@ -153,6 +289,46 @@ namespace TwainControl
             }
         }
 
+        public bool SeperateSave
+        {
+            get { return seperateSave; }
+
+            set
+            {
+                if (seperateSave != value)
+                {
+                    seperateSave = value;
+                    OnPropertyChanged(nameof(SeperateSave));
+                }
+            }
+        }
+
+        public bool ShowProgress
+        {
+            get { return showProgress; }
+            set
+            {
+                if (showProgress != value)
+                {
+                    showProgress = value;
+                    OnPropertyChanged(nameof(ShowProgress));
+                }
+            }
+        }
+
+        public bool ShowUi
+        {
+            get { return showUi; }
+            set
+            {
+                if (showUi != value)
+                {
+                    showUi = value;
+                    OnPropertyChanged(nameof(ShowUi));
+                }
+            }
+        }
+
         public IList<string> Tarayıcılar
         {
             get => tarayıcılar;
@@ -165,14 +341,11 @@ namespace TwainControl
                 }
             }
         }
-
         protected virtual void OnPropertyChanged(string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         #region IDisposable Support
 
         private bool disposedValue;
-
-        private BitmapFrame seçiliResim;
 
         public void Dispose() => Dispose(true);
 
@@ -210,14 +383,14 @@ namespace TwainControl
                         using (System.Drawing.Bitmap bmp = args.Image)
                         {
                             BitmapImage evrak = null;
-                            switch (BlackAndWhiteCheckBox.IsChecked)
+                            switch (Bw)
                             {
                                 case true:
-                                    evrak = bmp.ConvertBlackAndWhite((int)IntInpThreshold.Value).ToBitmapImage(ImageFormat.Tiff);
+                                    evrak = bmp.ConvertBlackAndWhite((int)Eşik).ToBitmapImage(ImageFormat.Tiff);
                                     break;
 
                                 case null:
-                                    evrak = bmp.ConvertBlackAndWhite((int)IntInpThreshold.Value, true).ToBitmapImage(ImageFormat.Jpeg);
+                                    evrak = bmp.ConvertBlackAndWhite((int)Eşik, true).ToBitmapImage(ImageFormat.Jpeg);
                                     break;
 
                                 case false:
@@ -231,12 +404,12 @@ namespace TwainControl
                             BitmapFrame bitmapFrame = BitmapFrame.Create(evrak, önizleme);
                             bitmapFrame.Freeze();
                             Resimler.Add(bitmapFrame);
-                            if (SeperateSaveCheckBox.IsChecked == true && BlackAndWhiteCheckBox.IsChecked == true)
+                            if (SeperateSave && Bw == true)
                             {
                                 File.WriteAllBytes(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures).SetUniqueFile($"{DateTime.Now.ToShortDateString()}Tarama", "tif"), evrak.ToTiffJpegByteArray(Picture.Format.Tiff));
                             }
 
-                            if (SeperateSaveCheckBox.IsChecked == true && BlackAndWhiteCheckBox.IsChecked == false)
+                            if (SeperateSave && Bw == false)
                             {
                                 File.WriteAllBytes(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures).SetUniqueFile($"{DateTime.Now.ToShortDateString()}Tarama", "jpg"), evrak.ToTiffJpegByteArray(Picture.Format.Jpg));
                             }
@@ -252,6 +425,7 @@ namespace TwainControl
             }
             catch (Exception)
             {
+                ArayüzEtkin = false;
             }
         }
     }

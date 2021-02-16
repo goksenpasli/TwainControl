@@ -1,24 +1,41 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Windows.Input;
 
 namespace TwainControl
 {
-    public class RelayCommand : ICommand
+    public class RelayCommand<T> : ICommand
     {
-        private readonly Func<object, bool> canExecute;
+        private readonly Predicate<T> _canExecute;
+        private readonly Action<T> _execute;
 
-        private readonly Action<object> execute;
+        public RelayCommand(Action<T> execute)
+            : this(execute, null)
+        { }
 
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        public RelayCommand(Action execute)
+            : this(o => execute())
+        { }
+
+        public RelayCommand(Action execute, Func<bool> canExecute)
+            : this(o => execute(), o => canExecute())
+        { }
+
+        public RelayCommand(Action<T> execute, Predicate<T> canExecute)
         {
-            this.execute = execute;
-            this.canExecute = canExecute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
         }
 
-        public event EventHandler CanExecuteChanged { add => CommandManager.RequerySuggested += value; remove => CommandManager.RequerySuggested -= value; }
+        [DebuggerStepThrough]
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute((T)parameter);
 
-        public bool CanExecute(object parameter) => canExecute == null || canExecute(parameter);
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
-        public void Execute(object parameter) => execute(parameter);
+        public void Execute(object parameter) => _execute((T)parameter);
     }
 }
